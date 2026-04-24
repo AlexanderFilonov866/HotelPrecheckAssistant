@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ETG Precheck Assistant</title>
+  <style>
+    :root {
+      --bg: #f3f5f9;
+      --panel: #ffffff;
+      --panel-soft: #f9fbff;
+      --text: #1b2430;
+      --muted: #6a7482;
+      --line: #dbe3ef;
+      --brand: #2e6df6;
+      --brand-soft: #e9f0ff;
+      --ok: #0d9f6e;
+      --warn: #f59e0b;
+      --danger: #d93f55;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .dark {
+      --bg: #0f1521;
+      --panel: #161f2e;
+      --panel-soft: #1b2638;
+      --text: #ecf1f9;
+      --muted: #a8b5c6;
+      --line: #2a3750;
+      --brand: #4f85ff;
+      --brand-soft: #243557;
+      --ok: #2fcb96;
+      --warn: #f7b954;
+      --danger: #f26c7f;
+      --shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .topbar {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .chip-group {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .chip-group button {
+      border: 0;
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .chip-group button.active {
+      background: var(--brand-soft);
+      color: var(--brand);
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn.primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 350px minmax(420px, 1fr) 350px;
+      gap: 12px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700;
+    }
+
+    .panel-body {
+      padding: 12px;
+      overflow: auto;
+      display: grid;
+      gap: 10px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-soft);
+      overflow: hidden;
+    }
+
+    details[open] {
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 24%, transparent);
+    }
+
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 10px 12px;
+      font-weight: 600;
+    }
+
+    .fields {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .field.full {
+      grid-column: span 2;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      grid-column: span 2;
+      padding: 8px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .switch {
+      width: 42px;
+      height: 24px;
+      border-radius: 20px;
+      background: #c8d2e2;
+      position: relative;
+      cursor: pointer;
+      transition: background .2s ease;
+    }
+
+    .switch::before {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .2s ease;
+    }
+
+    .switch.on {
+      background: var(--brand);
+    }
+
+    .switch.on::before {
+      transform: translateX(18px);
+    }
+
+    .progress {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: var(--panel-soft);
+      display: grid;
+      gap: 6px;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #d5deeb;
+      overflow: hidden;
+    }
+
+    .bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand), #5da3ff);
+      width: 0;
+      transition: width .3s ease;
+    }
+
+    .script-section {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--panel-soft);
+    }
+
+    .script-section h3 {
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    .item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 8px;
+    }
+
+    .item:last-child {
+      border-bottom: 0;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .item-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--brand);
+    }
+
+    .phrase {
+      line-height: 1.3;
+    }
+
+    .meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--panel);
+    }
+
+    .tag.required {
+      color: var(--brand);
+      border-color: color-mix(in srgb, var(--brand) 30%, var(--line));
+      background: var(--brand-soft);
+    }
+
+    .response {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-left: 26px;
+    }
+
+    .response select {
+      width: auto;
+      min-width: 160px;
+    }
+
+    .warning-box {
+      border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+      background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+      border-radius: 10px;
+      padding: 10px;
+      position: sticky;
+      top: 12px;
+      z-index: 2;
+    }
+
+    .warning-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 8px;
+      border: 1px solid transparent;
+      margin: 0 6px 6px 0;
+    }
+
+    .danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); background: color-mix(in srgb, var(--danger) 10%, var(--panel)); }
+    .warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
+
+    .template-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .template-grid button {
+      text-align: left;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1240px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        min-height: 320px;
+      }
+      .warning-box {
+        position: static;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .fields {
+        grid-template-columns: 1fr;
+      }
+      .field.full,
+      .toggle-row {
+        grid-column: span 1;
+      }
+      .template-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <div class="topbar">
+      <div class="brand" id="appTitle">ETG / Ostrovok Precheck Assistant</div>
+      <div class="toolbar">
+        <label><input type="checkbox" id="autoLang" checked /> Auto language by country</label>
+        <div class="chip-group">
+          <button data-lang="ru" id="langRu">RU</button>
+          <button data-lang="en" id="langEn" class="active">EN</button>
+        </div>
+        <button class="btn" id="darkModeBtn">Dark mode</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-header" id="leftTitle">Booking & Property Data</div>
+        <div class="panel-body">
+          <details open>
+            <summary id="bookingSectionTitle">Booking Core</summary>
+            <div class="fields">
+              <div class="field full"><label id="lblCallerName" for="callerName">Caller name</label><input id="callerName" /></div>
+              <div class="field full"><label id="lblPropertyName" for="propertyName">Property name</label><input id="propertyName" /></div>
+              <div class="field full"><label id="lblAddress" for="address">Address</label><input id="address" /></div>
+              <div class="field"><label id="lblGuestName" for="guestName">Guest name</label><input id="guestName" /></div>
+              <div class="field"><label id="lblCountry" for="country">Country</label><input id="country" list="countriesList" /></div>
+              <div class="field"><label id="lblDates" for="dates">Dates</label><input id="dates" placeholder="2026-05-10 to 2026-05-15" /></div>
+              <div class="field"><label id="lblNights" for="nights">Nights</label><input id="nights" type="number" min="1" /></div>
+              <div class="field"><label id="lblAdults" for="adults">Adults</label><input id="adults" type="number" min="1" value="2" /></div>
+              <div class="field"><label id="lblChildren" for="children">Children</label><input id="children" type="number" min="0" value="0" /></div>
+            </div>
+          </details>
+
+          <details open>
+            <summary id="propertyRulesTitle">Property Parameters</summary>
+            <div class="fields">
+              <div class="field">
+                <label id="lblPropertyType" for="propertyType">Property type</label>
+                <select id="propertyType">
+                  <option value="hotel">Hotel</option>
+                  <option value="apart-hotel">Apart-hotel</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="guest-house">Guest House</option>
+                  <option value="hostel">Hostel</option>
+                </select>
+              </div>
+              <div class="field">
+                <label id="lblStars" for="stars">Hotel stars</label>
+                <select id="stars">
+                  <option value="">N/A</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label id="lblRoomType" for="roomType">Booked room type</label>
+                <input id="roomType" />
+              </div>
+              <div class="toggle-row">
+                <span id="crmAddressLabel">CRM address confirmed</span>
+                <div class="switch" id="crmAddressSwitch" role="button" aria-label="CRM address confirmed"></div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header" id="centerTitle">Dynamic Call Script</div>
+        <div class="panel-body">
+          <div class="progress">
+            <div id="progressText">0 / 0 completed</div>
+            <div class="bar"><div id="progressFill"></div></div>
+          </div>
+          <div id="scriptContainer"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header" id="rightTitle">Warnings, Notes & Templates</div>
+        <div class="panel-body">
+          <div class="warning-box">
+            <div style="font-weight:700; margin-bottom:8px;" id="riskHeader">Risk flags</div>
+            <div id="warningBadges"></div>
+            <div class="muted" id="noRisksLabel">No red flags yet.</div>
+          </div>
+
+          <details open>
+            <summary id="findingsTitle">Findings that trigger warnings</summary>
+            <div class="fields">
+              <div class="field full"><label id="lblExtraFees" for="flagExtraFees">Extra fees detected</label><select id="flagExtraFees"><option value="no">No</option><option value="yes">Yes</option></select></div>
+              <div class="field full"><label id="lblForeignersAccepted" for="flagForeigners">Foreigners accepted</label><select id="flagForeigners"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></div>
+              <div class="field full"><label id="lblNationalityPrice" for="flagNationalityPrice">Same price for all nationalities</label><select id="flagNationalityPrice"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></div>
+              <div class="field full"><label id="lblBathroom" for="flagBathroom">Private bathroom</label><select id="flagBathroom"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></div>
+              <div class="field full"><label id="lblWindow" for="flagWindow">Window in room</label><select id="flagWindow"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></div>
+              <div class="field full"><label id="lblReception" for="flagReception">Reception hours</label><select id="flagReception"><option value="24">24/7</option><option value="limited">Limited</option><option value="none">No reception</option><option value="unknown">Unknown</option></select></div>
+            </div>
+          </details>
+
+          <details open>
+            <summary id="guestTemplatesTitle">Guest comment templates</summary>
+            <div class="template-grid" id="templateButtons"></div>
+          </details>
+
+          <details open>
+            <summary id="notesTitle">Agent notes</summary>
+            <div class="fields">
+              <div class="field full"><textarea id="notes" placeholder="Call observations, confirmed terms, constraints..."></textarea></div>
+            </div>
+          </details>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <datalist id="countriesList">
+    <option>Russia</option><option>Belarus</option><option>Kazakhstan</option><option>Armenia</option><option>Kyrgyzstan</option><option>Uzbekistan</option>
+    <option>Egypt</option><option>Turkey</option><option>UAE</option><option>Algeria</option><option>China</option>
+  </datalist>
+
+  <script>
+    const RU_COUNTRIES = ["russia", "belarus", "kazakhstan", "armenia", "kyrgyzstan", "uzbekistan"];
+    const NATIONALITY_PRICE_COUNTRIES = ["egypt", "turkey", "uae", "algeria"];
+
+    const state = {
+      lang: "en",
+      autoLang: true,
+      darkMode: false,
+      crmAddressConfirmed: false,
+      completed: {},
+      fields: {
+        callerName: "",
+        propertyName: "",
+        address: "",
+        guestName: "",
+        nights: "",
+        dates: "",
+        adults: "2",
+        children: "0",
+        country: "",
+        propertyType: "hotel",
+        stars: "",
+        roomType: ""
+      },
+      flags: {
+        extraFees: "no",
+        foreigners: "yes",
+        nationalityPrice: "yes",
+        bathroom: "yes",
+        window: "yes",
+        reception: "24"
+      }
+    };
+
+    const i18n = {
+      en: {
+        appTitle: "ETG / Ostrovok Precheck Assistant",
+        leftTitle: "Booking & Property Data",
+        centerTitle: "Dynamic Call Script",
+        rightTitle: "Warnings, Notes & Templates",
+        bookingSectionTitle: "Booking Core",
+        propertyRulesTitle: "Property Parameters",
+        labels: {
+          callerName: "Caller name",
+          propertyName: "Property name",
+          address: "Address",
+          guestName: "Guest name",
+          country: "Country",
+          dates: "Dates",
+          nights: "Nights",
+          adults: "Adults",
+          children: "Children",
+          propertyType: "Property type",
+          stars: "Hotel stars",
+          roomType: "Booked room type",
+          crmAddress: "CRM address confirmed",
+          findings: "Findings that trigger warnings",
+          notes: "Agent notes",
+          guestTemplates: "Guest comment templates",
+          riskHeader: "Risk flags",
+          noRisks: "No red flags yet."
+        },
+        controls: {
+          dark: "Dark mode",
+          reset: "Reset",
+          autoLang: "Auto language by country"
+        },
+        sections: {
+          opening: "Opening",
+          booking: "Booking verification",
+          property: "Property-specific checks",
+          operational: "Operational questions",
+          additional: "Additional required checks",
+          closing: "Closing"
+        },
+        phrases: {
+          greet: "Hello! Thank you for taking my call.",
+          introEtg: "My name is {callerName}, I am calling from Emerging Travel Group (Ostrovok).",
+          askAssistance: "May I ask for your help to verify a booking detail set?",
+          bookingProperty: "For booking, property is {propertyName}. Correct?",
+          confirmAddress: "Address in our system is: {address}. Is this correct?",
+          guestName: "Guest name in booking: {guestName}. Correct?",
+          stayDates: "Stay dates: {dates}, total nights: {nights}. Correct?",
+          adultsChildren: "Occupancy: adults {adults}, children {children}. Correct?",
+          roomType: "Booked room type is: {roomType}. Correct?",
+          roomsPlaces: "How many rooms/sleeping places are included?",
+          mealPlan: "What meal plan is provided?",
+          paymentMethod: "What is the payment method at property?",
+          extraCharges: "Are there any extra mandatory charges?",
+          cleaningFee: "Is a cleaning fee charged separately?",
+          privateBathroom: "Does the room include a private bathroom?",
+          roomWindow: "Is there a window in the room?",
+          receptionHours: "What are the reception working hours?",
+          nationalityPrice: "Is there the same price for the room for all nationalities?",
+          foreignersAccepted: "Does your hotel accept foreigners?",
+          howAddressYou: "How may I address you?",
+          yourPosition: "Could you please tell me your position?",
+          checkinFlexibility: "Is check-in/check-out time flexible if requested?",
+          remoteCheckin: "Do you provide remote/self check-in instructions?",
+          cityTax: "Is city/resort tax charged separately?",
+          childPolicy: "What is your child accommodation policy?",
+          beddingType: "Can guests choose bedding type (double/twin)?",
+          checkinCheckout: "Please confirm standard check-in and check-out times.",
+          pets: "Are pets allowed, and under what conditions?",
+          closing: "Thank you for your support. Have a great day!"
+        },
+        tags: {
+          required: "Mandatory by rule"
+        },
+        responses: {
+          yes: "Yes",
+          no: "No",
+          unknown: "Unknown",
+          limited: "Limited"
+        },
+        warnings: {
+          extraFees: "Extra fees detected",
+          foreignersNo: "Foreigners not accepted",
+          nationalityDiff: "Nationality pricing discrepancy",
+          noBathroom: "No private bathroom",
+          noWindow: "No window in room",
+          limitedReception: "Limited reception hours"
+        },
+        progress: (done, total) => `${done} / ${total} completed`,
+        templates: [
+          "Guest arrives late, please keep booking active.",
+          "Guest requests possible early check-in if available.",
+          "Guest is on honeymoon, can you provide a suitable room?",
+          "Guest may require a baby crib.",
+          "Guest requests a quiet room.",
+          "Guest prefers a high floor room.",
+          "Guest requests one double bed."
+        ]
+      },
+      ru: {
+        appTitle: "Ассистент пре-чека ETG / Ostrovok",
+        leftTitle: "Данные бронирования и объекта",
+        centerTitle: "Динамический скрипт звонка",
+        rightTitle: "Риски, заметки и шаблоны",
+        bookingSectionTitle: "Основные данные",
+        propertyRulesTitle: "Параметры объекта",
+        labels: {
+          callerName: "Имя звонящего",
+          propertyName: "Название объекта",
+          address: "Адрес",
+          guestName: "Имя гостя",
+          country: "Страна",
+          dates: "Даты",
+          nights: "Ночей",
+          adults: "Взрослые",
+          children: "Дети",
+          propertyType: "Тип объекта",
+          stars: "Звезды отеля",
+          roomType: "Тип забронированного номера",
+          crmAddress: "Адрес в CRM подтвержден",
+          findings: "Результаты, влияющие на риски",
+          notes: "Заметки специалиста",
+          guestTemplates: "Шаблоны комментариев гостя",
+          riskHeader: "Флаги риска",
+          noRisks: "Красных флагов пока нет."
+        },
+        controls: {
+          dark: "Темная тема",
+          reset: "Сброс",
+          autoLang: "Авто-язык по стране"
+        },
+        sections: {
+          opening: "Открытие звонка",
+          booking: "Проверка бронирования",
+          property: "Проверки по типу объекта",
+          operational: "Операционные вопросы",
+          additional: "Дополнительные обязательные проверки",
+          closing: "Завершение"
+        },
+        phrases: {
+          greet: "Здравствуйте! Спасибо, что приняли звонок.",
+          introEtg: "Меня зовут {callerName}, звоню из Emerging Travel Group (Ostrovok).",
+          askAssistance: "Подскажите, пожалуйста, сможете помочь с проверкой бронирования?",
+          bookingProperty: "По бронированию объект: {propertyName}. Все верно?",
+          confirmAddress: "Адрес в нашей системе: {address}. Верно?",
+          guestName: "Имя гостя в бронировании: {guestName}. Верно?",
+          stayDates: "Даты проживания: {dates}, ночей: {nights}. Верно?",
+          adultsChildren: "Состав гостей: взрослых {adults}, детей {children}. Верно?",
+          roomType: "Тип забронированного номера: {roomType}. Верно?",
+          roomsPlaces: "Сколько комнат/спальных мест включено?",
+          mealPlan: "Какой тип питания предоставляется?",
+          paymentMethod: "Какой способ оплаты на объекте?",
+          extraCharges: "Есть ли обязательные доплаты на месте?",
+          cleaningFee: "Взимается ли отдельно плата за уборку?",
+          privateBathroom: "Есть ли в номере/размещении собственная ванная комната?",
+          roomWindow: "Есть ли окно в номере?",
+          receptionHours: "Какой график работы стойки регистрации?",
+          nationalityPrice: "Одинаковая ли цена номера для всех национальностей?",
+          foreignersAccepted: "Ваш отель принимает иностранных граждан?",
+          howAddressYou: "Как я могу к вам обращаться?",
+          yourPosition: "Подскажите, пожалуйста, вашу должность.",
+          checkinFlexibility: "Возможна ли гибкость по времени заезда/выезда?",
+          remoteCheckin: "Предоставляете ли вы инструкции для удаленного/self check-in?",
+          cityTax: "Есть ли отдельный городской/курортный налог?",
+          childPolicy: "Какая у вас политика размещения детей?",
+          beddingType: "Можно ли выбрать тип кровати (double/twin)?",
+          checkinCheckout: "Подтвердите стандартное время check-in/check-out.",
+          pets: "Разрешено ли размещение с животными и на каких условиях?",
+          closing: "Спасибо за помощь! Хорошего дня!"
+        },
+        tags: {
+          required: "Обязательный по правилу"
+        },
+        responses: {
+          yes: "Да",
+          no: "Нет",
+          unknown: "Неизвестно",
+          limited: "Ограничено"
+        },
+        warnings: {
+          extraFees: "Обнаружены доплаты",
+          foreignersNo: "Иностранцы не принимаются",
+          nationalityDiff: "Разная цена по национальности",
+          noBathroom: "Нет частной ванной",
+          noWindow: "Нет окна в номере",
+          limitedReception: "Ограниченные часы ресепшн"
+        },
+        progress: (done, total) => `${done} / ${total} выполнено`,
+        templates: [
+          "Гость прибывает поздно, просьба сохранить бронь активной.",
+          "Гость просит ранний заезд при наличии возможности.",
+          "Гости в свадебном путешествии, возможно ли более комфортное размещение?",
+          "Гостю может потребоваться детская кроватка.",
+          "Гость просит тихий номер.",
+          "Гость предпочитает высокий этаж.",
+          "Гость просит одну двуспальную кровать."
+        ]
+      }
+    };
+
+    function normalizeCountry(value) {
+      return (value || "").trim().toLowerCase();
+    }
+
+    function detectLanguageByCountry(country) {
+      return RU_COUNTRIES.includes(normalizeCountry(country)) ? "ru" : "en";
+    }
+
+    function computeRules() {
+      const type = state.fields.propertyType;
+      const stars = Number(state.fields.stars || 0);
+      const country = normalizeCountry(state.fields.country);
+      const hotelLike = type === "hotel" || type === "apart-hotel";
+
+      return {
+        requireAddress: type === "apartment" || !state.crmAddressConfirmed,
+        askRemoteCheckin: type === "apartment",
+        askRoomsPlaces: type === "apartment",
+        askCleaningFee: type === "apartment",
+        askPrivateBathroom: type === "guest-house" || (hotelLike && stars > 0 && stars < 3),
+        askWindow: type === "guest-house" || (hotelLike && stars > 0 && stars < 3),
+        askReceptionHours: type === "guest-house" || type === "hostel" || (hotelLike && stars > 0 && stars < 3),
+        askNationalityPrice: NATIONALITY_PRICE_COUNTRIES.includes(country),
+        askForeigners: country === "china",
+        omitBathWindow: type === "hostel"
+      };
+    }
+
+    function buildScript(rules) {
+      const type = state.fields.propertyType;
+      const items = [
+        { id: "greet", section: "opening", required: true },
+        { id: "introEtg", section: "opening", required: true },
+        { id: "askAssistance", section: "opening", required: true },
+        { id: "bookingProperty", section: "opening", required: true },
+        { id: "confirmAddress", section: "opening", required: rules.requireAddress, show: rules.requireAddress },
+
+        { id: "guestName", section: "booking", required: true },
+        { id: "stayDates", section: "booking", required: true },
+        { id: "adultsChildren", section: "booking", required: true },
+        { id: "roomType", section: "booking", required: type === "hotel", show: type === "hotel" },
+        { id: "roomsPlaces", section: "booking", required: rules.askRoomsPlaces, show: rules.askRoomsPlaces },
+        { id: "mealPlan", section: "booking", required: true },
+        { id: "paymentMethod", section: "booking", required: true },
+        { id: "extraCharges", section: "booking", required: true },
+
+        { id: "cleaningFee", section: "property", required: rules.askCleaningFee, show: rules.askCleaningFee },
+        { id: "privateBathroom", section: "property", required: rules.askPrivateBathroom && !rules.omitBathWindow, show: rules.askPrivateBathroom && !rules.omitBathWindow },
+        { id: "roomWindow", section: "property", required: rules.askWindow && !rules.omitBathWindow, show: rules.askWindow && !rules.omitBathWindow },
+        { id: "receptionHours", section: "property", required: rules.askReceptionHours, show: rules.askReceptionHours },
+        { id: "nationalityPrice", section: "property", required: rules.askNationalityPrice, show: rules.askNationalityPrice },
+        { id: "foreignersAccepted", section: "property", required: rules.askForeigners, show: rules.askForeigners },
+
+        { id: "howAddressYou", section: "operational", required: true },
+        { id: "yourPosition", section: "operational", required: true },
+        { id: "checkinFlexibility", section: "operational", required: true },
+        { id: "remoteCheckin", section: "operational", required: rules.askRemoteCheckin, show: rules.askRemoteCheckin },
+
+        { id: "cityTax", section: "additional", required: true },
+        { id: "childPolicy", section: "additional", required: true },
+        { id: "beddingType", section: "additional", required: true },
+        { id: "checkinCheckout", section: "additional", required: true },
+        { id: "pets", section: "additional", required: true },
+        { id: "closing", section: "closing", required: true }
+      ];
+
+      return items.filter(x => x.show !== false).map(item => ({
+        ...item,
+        phrase: phraseFor(item.id)
+      }));
+    }
+
+    function phraseFor(id) {
+      const t = i18n[state.lang];
+      const f = state.fields;
+      const fallback = state.lang === "ru" ? "не указано" : "not specified";
+      const map = {
+        callerName: f.callerName || fallback,
+        propertyName: f.propertyName || fallback,
+        address: f.address || fallback,
+        guestName: f.guestName || fallback,
+        dates: f.dates || fallback,
+        nights: f.nights || fallback,
+        adults: f.adults || fallback,
+        children: f.children || "0",
+        roomType: f.roomType || fallback
+      };
+      return (t.phrases[id] || "").replace(/\{(\w+)\}/g, (_, key) => map[key] || fallback);
+    }
+
+    function renderScript() {
+      const rules = computeRules();
+      const list = buildScript(rules);
+      const t = i18n[state.lang];
+      const container = document.getElementById("scriptContainer");
+      container.innerHTML = "";
+      const bySection = {};
+      list.forEach(item => {
+        if (!bySection[item.section]) bySection[item.section] = [];
+        bySection[item.section].push(item);
+      });
+
+      Object.keys(t.sections).forEach(sectionKey => {
+        if (!bySection[sectionKey] || bySection[sectionKey].length === 0) return;
+        const sectionEl = document.createElement("div");
+        sectionEl.className = "script-section";
+        sectionEl.innerHTML = `<h3>${t.sections[sectionKey]}</h3>`;
+
+        bySection[sectionKey].forEach(item => {
+          const row = document.createElement("div");
+          row.className = "item";
+          const checked = !!state.completed[item.id];
+          row.innerHTML = `
+            <div class="item-row">
+              <input type="checkbox" data-check="${item.id}" ${checked ? "checked" : ""} />
+              <div class="phrase">${item.phrase}</div>
+            </div>
+            <div class="meta">
+              ${item.required ? `<span class="tag required">${t.tags.required}</span>` : ""}
+              <span class="tag">${sectionKey}</span>
+            </div>
+          `;
+          sectionEl.appendChild(row);
+        });
+        container.appendChild(sectionEl);
+      });
+
+      container.querySelectorAll('input[data-check]').forEach(cb => {
+        cb.addEventListener("change", (e) => {
+          state.completed[e.target.dataset.check] = e.target.checked;
+          updateProgress();
+        });
+      });
+
+      updateProgress(list);
+    }
+
+    function updateProgress(renderedList) {
+      const list = renderedList || buildScript(computeRules());
+      const total = list.length;
+      const done = list.filter(x => state.completed[x.id]).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const t = i18n[state.lang];
+      document.getElementById("progressText").textContent = t.progress(done, total);
+      document.getElementById("progressFill").style.width = pct + "%";
+    }
+
+    function collectWarnings() {
+      const t = i18n[state.lang];
+      const w = [];
+      if (state.flags.extraFees === "yes") w.push({ text: t.warnings.extraFees, level: "warn" });
+      if (state.flags.foreigners === "no") w.push({ text: t.warnings.foreignersNo, level: "danger" });
+      if (state.flags.nationalityPrice === "no") w.push({ text: t.warnings.nationalityDiff, level: "danger" });
+      if (state.flags.bathroom === "no") w.push({ text: t.warnings.noBathroom, level: "warn" });
+      if (state.flags.window === "no") w.push({ text: t.warnings.noWindow, level: "warn" });
+      if (state.flags.reception === "limited" || state.flags.reception === "none") w.push({ text: t.warnings.limitedReception, level: "warn" });
+      return w;
+    }
+
+    function renderWarnings() {
+      const warnings = collectWarnings();
+      const list = document.getElementById("warningBadges");
+      const noRisks = document.getElementById("noRisksLabel");
+      list.innerHTML = "";
+      warnings.forEach(w => {
+        const badge = document.createElement("span");
+        badge.className = `warning-badge ${w.level}`;
+        badge.textContent = w.text;
+        list.appendChild(badge);
+      });
+      noRisks.style.display = warnings.length ? "none" : "block";
+    }
+
+    function applyLanguageLabels() {
+      const t = i18n[state.lang];
+      document.documentElement.lang = state.lang;
+      document.getElementById("appTitle").textContent = t.appTitle;
+      document.getElementById("leftTitle").textContent = t.leftTitle;
+      document.getElementById("centerTitle").textContent = t.centerTitle;
+      document.getElementById("rightTitle").textContent = t.rightTitle;
+      document.getElementById("bookingSectionTitle").textContent = t.bookingSectionTitle;
+      document.getElementById("propertyRulesTitle").textContent = t.propertyRulesTitle;
+
+      document.getElementById("lblPropertyName").textContent = t.labels.propertyName;
+      document.getElementById("lblCallerName").textContent = t.labels.callerName;
+      document.getElementById("lblAddress").textContent = t.labels.address;
+      document.getElementById("lblGuestName").textContent = t.labels.guestName;
+      document.getElementById("lblCountry").textContent = t.labels.country;
+      document.getElementById("lblDates").textContent = t.labels.dates;
+      document.getElementById("lblNights").textContent = t.labels.nights;
+      document.getElementById("lblAdults").textContent = t.labels.adults;
+      document.getElementById("lblChildren").textContent = t.labels.children;
+      document.getElementById("lblPropertyType").textContent = t.labels.propertyType;
+      document.getElementById("lblStars").textContent = t.labels.stars;
+      document.getElementById("lblRoomType").textContent = t.labels.roomType;
+      document.getElementById("crmAddressLabel").textContent = t.labels.crmAddress;
+      document.getElementById("findingsTitle").textContent = t.labels.findings;
+      document.getElementById("notesTitle").textContent = t.labels.notes;
+      document.getElementById("guestTemplatesTitle").textContent = t.labels.guestTemplates;
+      document.getElementById("riskHeader").textContent = t.labels.riskHeader;
+      document.getElementById("noRisksLabel").textContent = t.labels.noRisks;
+
+      document.getElementById("lblExtraFees").textContent = t.warnings.extraFees;
+      document.getElementById("lblForeignersAccepted").textContent = t.phrases.foreignersAccepted;
+      document.getElementById("lblNationalityPrice").textContent = t.phrases.nationalityPrice;
+      document.getElementById("lblBathroom").textContent = t.phrases.privateBathroom;
+      document.getElementById("lblWindow").textContent = t.phrases.roomWindow;
+      document.getElementById("lblReception").textContent = t.phrases.receptionHours;
+
+      document.getElementById("darkModeBtn").textContent = t.controls.dark;
+      document.getElementById("resetBtn").textContent = t.controls.reset;
+      document.querySelector("label[for='autoLang']");
+      document.querySelector("label input#autoLang").parentElement.childNodes[1].textContent = " " + t.controls.autoLang;
+
+      document.getElementById("langRu").classList.toggle("active", state.lang === "ru");
+      document.getElementById("langEn").classList.toggle("active", state.lang === "en");
+
+      renderTemplates();
+      renderScript();
+      renderWarnings();
+    }
+
+    function renderTemplates() {
+      const t = i18n[state.lang];
+      const box = document.getElementById("templateButtons");
+      box.innerHTML = "";
+      t.templates.forEach(template => {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.textContent = template;
+        btn.addEventListener("click", () => {
+          const notes = document.getElementById("notes");
+          notes.value = notes.value ? `${notes.value}\n- ${template}` : `- ${template}`;
+        });
+        box.appendChild(btn);
+      });
+    }
+
+    function syncFromUI() {
+      const ids = ["callerName", "propertyName", "address", "guestName", "nights", "dates", "adults", "children", "country", "propertyType", "stars", "roomType"];
+      ids.forEach(id => state.fields[id] = document.getElementById(id).value);
+      localStorage.setItem("etgCallerName", state.fields.callerName);
+      state.flags.extraFees = document.getElementById("flagExtraFees").value;
+      state.flags.foreigners = document.getElementById("flagForeigners").value;
+      state.flags.nationalityPrice = document.getElementById("flagNationalityPrice").value;
+      state.flags.bathroom = document.getElementById("flagBathroom").value;
+      state.flags.window = document.getElementById("flagWindow").value;
+      state.flags.reception = document.getElementById("flagReception").value;
+      state.autoLang = document.getElementById("autoLang").checked;
+
+      if (state.autoLang) {
+        state.lang = detectLanguageByCountry(state.fields.country);
+      }
+      applyLanguageLabels();
+    }
+
+    function resetState() {
+      const persistedCallerName = localStorage.getItem("etgCallerName") || state.fields.callerName || "";
+      state.lang = "en";
+      state.autoLang = true;
+      state.darkMode = false;
+      state.crmAddressConfirmed = false;
+      state.completed = {};
+      state.fields = {
+        callerName: persistedCallerName,
+        propertyName: "",
+        address: "",
+        guestName: "",
+        nights: "",
+        dates: "",
+        adults: "2",
+        children: "0",
+        country: "",
+        propertyType: "hotel",
+        stars: "",
+        roomType: ""
+      };
+      state.flags = {
+        extraFees: "no",
+        foreigners: "yes",
+        nationalityPrice: "yes",
+        bathroom: "yes",
+        window: "yes",
+        reception: "24"
+      };
+      document.querySelectorAll("input, select, textarea").forEach(el => {
+        if (el.type === "checkbox") {
+          el.checked = el.id === "autoLang";
+        } else if (el.id in state.fields) {
+          el.value = state.fields[el.id];
+        } else if (el.id === "notes") {
+          el.value = "";
+        } else if (el.id === "flagExtraFees") el.value = "no";
+        else if (el.id === "flagForeigners") el.value = "yes";
+        else if (el.id === "flagNationalityPrice") el.value = "yes";
+        else if (el.id === "flagBathroom") el.value = "yes";
+        else if (el.id === "flagWindow") el.value = "yes";
+        else if (el.id === "flagReception") el.value = "24";
+      });
+      setToggle("crmAddressSwitch", false);
+      document.getElementById("appRoot").classList.remove("dark");
+      applyLanguageLabels();
+    }
+
+    function setToggle(id, value) {
+      const el = document.getElementById(id);
+      el.classList.toggle("on", value);
+      el.dataset.value = value ? "1" : "0";
+    }
+
+    function initEvents() {
+      document.querySelectorAll("#callerName,#propertyName,#address,#guestName,#nights,#dates,#adults,#children,#country,#propertyType,#stars,#roomType,#flagExtraFees,#flagForeigners,#flagNationalityPrice,#flagBathroom,#flagWindow,#flagReception,#autoLang")
+        .forEach(el => el.addEventListener("input", syncFromUI));
+
+      document.getElementById("crmAddressSwitch").addEventListener("click", () => {
+        state.crmAddressConfirmed = !state.crmAddressConfirmed;
+        setToggle("crmAddressSwitch", state.crmAddressConfirmed);
+        renderScript();
+      });
+
+      document.getElementById("langRu").addEventListener("click", () => {
+        state.lang = "ru";
+        state.autoLang = false;
+        document.getElementById("autoLang").checked = false;
+        applyLanguageLabels();
+      });
+      document.getElementById("langEn").addEventListener("click", () => {
+        state.lang = "en";
+        state.autoLang = false;
+        document.getElementById("autoLang").checked = false;
+        applyLanguageLabels();
+      });
+
+      document.getElementById("darkModeBtn").addEventListener("click", () => {
+        state.darkMode = !state.darkMode;
+        document.getElementById("appRoot").classList.toggle("dark", state.darkMode);
+      });
+
+      document.getElementById("resetBtn").addEventListener("click", resetState);
+    }
+
+    initEvents();
+    state.fields.callerName = localStorage.getItem("etgCallerName") || "";
+    document.getElementById("callerName").value = state.fields.callerName;
+    setToggle("crmAddressSwitch", false);
+    applyLanguageLabels();
+  </script>
+</body>
+</html>
